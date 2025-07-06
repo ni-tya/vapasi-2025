@@ -31,62 +31,50 @@ public class SplitWise {
     }
 
     static void calculateExpenses(String inputLine) throws InvalidExpenseFormatException {
-        int amount, individualAmount;
-        String payer, payeesStr;
-        List<String> payees;
-
         String regex = "^(\\w+)\\s+spent\\s+(\\d+)\\s+for\\s+.+\\s+for\\s+([A-Za-z]+(?:\\s*,\\s*[A-Za-z]+)*)$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(inputLine);
+        List<String> payees;
 
         if (!matcher.matches()) {
             throw new InvalidExpenseFormatException("Invalid input format: " + inputLine);
         }
 
-        payer = matcher.group(1);
-        amount = Integer.parseInt(matcher.group(2));
-        payeesStr = matcher.group(3);
-        payees = Arrays.stream(payeesStr.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
-        Expense expense = new Expense(payer, payees, amount);
-        individualAmount = expense.getAmount() / expense.getPayees().size();
-        expense.getPayees().stream()
-                .filter(p -> !p.equals(expense.getPayer()))
-                .forEach(p -> System.out.println(p + " pays " + expense.getPayer() + " " + individualAmount));
-}
-
-static class Expense {
-    String payer;
-    int amount;
-    List<String> payees;
-
-    public Expense(String payer, List<String> payees, int amount) {
-        this.payer = payer;
-        this.payees = payees;
-        this.amount = amount;
+        payees = Arrays.stream(matcher.group(3)
+                .split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        Expense expense = new Expense(matcher.group(1), payees, Integer.parseInt(matcher.group(2)));
+        expense.printOutput();
     }
 
-    public int getAmount() {
-        return amount;
+    static class Expense {
+        String payer;
+        int amount;
+        List<String> payees;
+
+        public Expense(String payer, List<String> payees, int amount) {
+            this.payer = payer;
+            this.payees = payees;
+            this.amount = amount;
+        }
+
+        public void printOutput() {
+            payees.stream()
+                    .filter(p -> !p.equals(payer))
+                    .forEach(p -> System.out.println(p + " pays " + payer + " " + amount / payees.size()));
+        }
+
+        @Override
+        public String toString() {
+            return "Expense{" + "payer='" + payer + '\'' + ", amount=" + amount + ", payees=" + payees + '}';
+        }
     }
 
-    public List<String> getPayees() {
-        return payees;
-    }
-
-    public String getPayer() {
-        return payer;
-    }
-
-    @Override
-    public String toString() {
-        return "Expense{" + "payer='" + payer + '\'' + ", amount=" + amount + ", payees=" + payees + '}';
-    }
-}
-
-public static class InvalidExpenseFormatException extends Exception {
-    public InvalidExpenseFormatException(String message) {
-        super(message);
+    public static class InvalidExpenseFormatException extends Exception {
+        public InvalidExpenseFormatException(String message) {
+            super(message);
+        }
     }
 }
-}
-
