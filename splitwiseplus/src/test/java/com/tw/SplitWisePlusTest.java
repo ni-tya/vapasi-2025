@@ -1,52 +1,59 @@
 package com.tw;
 
-import static org.junit.jupiter.api.Assertions.*;
-import com.tw.SplitWisePlus.Expense;
-import com.tw.SplitWisePlus.InvalidExpenseFormatException;
-import java.util.*;
 import org.junit.jupiter.api.Test;
 
-public class SplitWisePlusTest {
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class SplitWisePlusTest {
 
     @Test
-    public void testSingleExpenseWithTwoPeople() {
-        Expense.expenseMap.clear();
-        Expense expense = new Expense("Aryan", 100, Arrays.asList("Aryan", "Navami"));
-        expense.calculateExpenditure();
+    void testSingleExpenseSplitEvenly() {
+        String payer = "A";
+        int amount = 100;
+        List<String> participants = Arrays.asList("A", "B", "C", "D");
+        Map<String, Map<String, Integer>> transactions = new HashMap<>();
 
-        assertEquals(50, Expense.expenseMap.get("NavamiAryan"));
+        SplitWisePlus.processExpense(payer, amount, participants, transactions);
+
+        assertEquals(1, transactions.get("B").size());
+        assertEquals(25, transactions.get("B").get("A"));
+
+        assertEquals(1, transactions.get("C").size());
+        assertEquals(25, transactions.get("C").get("A"));
+
+        assertEquals(1, transactions.get("D").size());
+        assertEquals(25, transactions.get("D").get("A"));
+
+        assertNull(transactions.get("A"));
     }
 
     @Test
-    public void testExpenseWithOnlySelf() {
-        Expense.expenseMap.clear();
-        Expense expense = new Expense("Amy", 100, List.of("Amy"));
-        expense.calculateExpenditure();
+    void testMultipleExpensesMergeOwedAmount() {
+        String payer = "A";
+        int amount1 = 100;
+        int amount2 = 100;
+        List<String> participants = Arrays.asList("A", "B", "C", "D");
+        Map<String, Map<String, Integer>> transactions = new HashMap<>();
 
-        assertTrue(Expense.expenseMap.isEmpty());
+        SplitWisePlus.processExpense(payer, amount1, participants, transactions);
+        SplitWisePlus.processExpense(payer, amount2, participants, transactions);
+
+        assertEquals(50, transactions.get("B").get("A"));
+        assertEquals(50, transactions.get("C").get("A"));
+        assertEquals(50, transactions.get("D").get("A"));
     }
 
     @Test
-    public void testBalancingBetweenTwoPeople() {
-        Expense.expenseMap.clear();
+    void testExpenseWithOnlyPayer() {
+        String payer = "A";
+        int amount = 100;
+        List<String> participants = Collections.singletonList("A");
+        Map<String, Map<String, Integer>> transactions = new HashMap<>();
 
-        new Expense("Navami", 60, Arrays.asList("Navami", "Aryan")).calculateExpenditure();
-        new Expense("Aryan", 80, Arrays.asList("Aryan", "Navami")).calculateExpenditure();
+        SplitWisePlus.processExpense(payer, amount, participants, transactions);
 
-        // Bob owes 10 to Alice
-        assertFalse(Expense.expenseMap.containsKey("AryanNavami"));
-        assertEquals(10, Expense.expenseMap.get("NavamiAryan"));
-    }
-
-    @Test
-    public void testInvalidInputFormatThrowsException() {
-        String inputLine = "Invalid input line";
-        String regex = "^(\\w+)\\s+spent\\s+(\\d+)\\s+for\\s+.+\\s+for\\s+([A-Za-z]+(?:\\s*,\\s*[A-Za-z]+)*)$";
-
-        assertThrows(InvalidExpenseFormatException.class, () -> {
-            if (!inputLine.matches(regex)) {
-                throw new InvalidExpenseFormatException("Invalid input format: " + inputLine);
-            }
-        });
+        assertTrue(transactions.isEmpty());
     }
 }
